@@ -60,6 +60,41 @@ Currently there is no way to load the redis service into Cloud Foundry as a "pro
 TODO - how to show available instance sizes
 TODO - how to edit available instance sizes (via the bosh deployment file templates)
 
+## Releasing new plugin gem versions
+
+There are three reasons to release new versions of this plugin.
+
+1. Package the latest [redis-boshrelease](https://github.com/cloudfoundry-community/redis-boshrelease) bosh release (which describes how the redis service is implemented)
+2. New features or bug fixes to the plugin
+3. Fix regressions caused by newer versions of the `cf` CLI or newer Cloud Foundry releases
+
+To package the latest "final release" of the redis bosh release into this source repository, run the following command:
+
+```
+$ cd /path/to/releases
+$ git clone https://github.com/cloudfoundry-community/redis-boshrelease.git
+$ cd -
+$ rake bosh:release:import[/path/to/releases/redis-boshrelease]
+# for zsh shell quotes are required around rake arguments:
+$ rake bosh:release:import'[/path/to/releases/redis-boshrelease]'
+```
+
+To install and test the plugin:
+
+```
+$ rake install
+$ cf
+```
+
+To release a new version of the plugin as a RubyGem:
+
+1. Edit `redis-cf-plugin.gemspec` to update the major or minor or patch version.
+2. Run the release command:
+
+```
+$ rake release
+```
+
 ## Contributing
 
 1. Fork it
