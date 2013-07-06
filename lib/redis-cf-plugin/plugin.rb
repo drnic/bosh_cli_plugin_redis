@@ -11,8 +11,7 @@ module RedisCfPlugin
     desc "Prepare target bosh for deploying one or more Redis services"
     group :services, :manage
     def prepare_redis
-      bosh_release_dir = File.expand_path("../../../bosh_release", __FILE__)
-      chdir(bosh_release_dir) do
+      within_bosh_release do
         # the releases/index.yml contains all the available release versions in an unordered
         # hash of hashes in YAML format:
         #     --- 
@@ -25,7 +24,7 @@ module RedisCfPlugin
         #         version: 4
         #       f044d47e0183f084db9dac5a6ef00d7bd21c8451: 
         #         version: 2
-        release_index = YAML.load_file(File.join(bosh_release_dir, "releases/index.yml"))
+        release_index = YAML.load_file("releases/index.yml")
         latest_version = release_index["builds"].values.inject(0) do |max_version, release|
           version = release["version"]
           max_version < version ? version : max_version
@@ -47,6 +46,12 @@ module RedisCfPlugin
     def bind_redis_env_var
       p env_var = input[:env_var]
       p app = input[:app]
+    end
+
+    protected
+    def within_bosh_release(&block)
+      bosh_release_dir = File.expand_path("../../../bosh_release", __FILE__)
+      chdir(bosh_release_dir, &block)
     end
   end
 end
