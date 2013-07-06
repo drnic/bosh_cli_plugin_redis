@@ -79,6 +79,8 @@ $ rake bosh:release:import[/path/to/releases/redis-boshrelease]
 $ rake bosh:release:import'[/path/to/releases/redis-boshrelease]'
 ```
 
+Note: only the latest "final release" will be packaged. See https://github.com/cloudfoundry-community/redis-boshrelease#readme for information on creating new bosh releases.
+
 To install and test the plugin:
 
 ```
