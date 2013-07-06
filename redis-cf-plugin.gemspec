@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
 
   spec.add_runtime_dependency "cf", "~> 4.1"
   spec.add_runtime_dependency "bosh_cli", "~> 1.5.0.pre"
+  spec.add_runtime_dependency "rake"
 
   spec.add_development_dependency "bundler", "~> 1.3"
-  spec.add_development_dependency "rake"
 end
