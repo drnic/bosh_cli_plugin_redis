@@ -18,3 +18,4 @@ tmp
 bosh_release/.final_builds/jobs/*/*.tgz
 bosh_release/.final_builds/packages/*/*.tgz
 bosh_release/releases/*.tgz
+deployments

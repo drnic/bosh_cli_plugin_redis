@@ -34,9 +34,55 @@ module RedisCfPlugin
       end
     end
 
+    # TODO - size must be valid
+    # TODO - name must be unique (cf services & bosh deployments)
+
     desc "Create a Redis service deployed upon target bosh"
     group :services, :manage
+    input :name, desc: "Unique name for service (within bosh & cloud foundry)"
+    input :size, desc: "Size of provisioned VMs", default: "small"
+    input :security_group, desc: "Security group to assign to provisioned VMs", default: "default"
     def create_redis
+      require "cli" # bosh_cli's director client library
+      service_name = input[:name] || "redis-#{Time.now.to_i}"
+      resource_size = input[:size]
+      security_group = input[:security_group]
+
+      bosh_uuid = bosh_director_client.get_status["uuid"]
+      bosh_cpi = bosh_director_client.get_status["cpi"]
+
+      template_file = File.join(bosh_release_dir, "templates", bosh_cpi, "single_vm.yml.erb")
+
+      # Create an initial deployment file; upon which the CPI-specific template will be applied below
+      # Initial file will look like:
+      # ---
+      # name: NAME
+      # director_uuid: UUID
+      # networks: {}
+      # properties:
+      #   redis:
+      #     resource: medium
+      #     security_group: redis-server
+      deployment_file = "deployments/redis/#{service_name}.yml"
+      sh "mkdir -p deployments/redis"
+      line "Creating deployment file #{deployment_file}..."
+      File.open(deployment_file, "w") do |file|
+        file << {
+          "name" => service_name,
+          "director_uuid" => bosh_uuid,
+          "networks" => {},
+          "properties" => {
+            "redis" => {
+              "resource" => resource_size,
+              "security_group" => security_group
+            }
+          }
+        }.to_yaml
+      end
+
+      sh "bosh deployment #{deployment_file}"
+      sh "bosh -n diff #{template_file}"
+      sh "bosh -n deploy"
     end
 
     desc "Bind current Redis service URI to current app via env variable"
@@ -49,9 +95,16 @@ module RedisCfPlugin
     end
 
     protected
+    def bosh_release_dir
+      File.expand_path("../../../bosh_release", __FILE__)
+    end
+
     def within_bosh_release(&block)
-      bosh_release_dir = File.expand_path("../../../bosh_release", __FILE__)
       chdir(bosh_release_dir, &block)
+    end
+
+    def bosh_director_client
+      @bosh_director_client ||= Bosh::Cli::Command::Base.new.director
     end
   end
 end
