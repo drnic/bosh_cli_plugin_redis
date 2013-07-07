@@ -91,8 +91,9 @@ module RedisCfPlugin
     group :services, :manage
     def bind_redis_env_var
       load_bosh_and_validate_current_deployment
-      p env_var = input[:env_var]
-      p app = input[:app]
+      env_var = input[:env_var]
+      app = input[:app]
+      invoke :set_env, app: app, name: env_var, value: service_uri, restart: true
     end
 
 
