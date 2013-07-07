@@ -1,10 +1,25 @@
-# Dedicate Redis services for Cloud Foundry
+# Dedicate Redis services for your Cloud Foundry
 
-TODO: Write a gem description
+Keep your Cloud Foundry services simple - run one service per server and delegate the creation and deletion to BOSH.
+
+This is a simple `cf` CLI plugin to create and delete dedicated redis services, and bind them into existing Cloud Foundry applications.
+
+Example create/bind/delete scenario:
+
+```
+$ cf prepare-redis
+$ cf create-redis
+$ cf bind-redis-env-var myapp
+$ cf delete-redis
+```
+
+The redis servers are run outside of the Cloud Foundry deployment and are bound to Cloud Foundry applications via environment variables (until the new Service Connector is supported). It is currently
 
 ## Requirements
 
-It is assumed that you have access to the same bosh being used to deploy your Cloud Foundry.
+You must use the same BOSH for deploying redis as you use to deploy Cloud Foundry (unless your DNS is configured to be shared across the two BOSH).
+
+It is also requried that you have login access to the same BOSH being used to deploy your Cloud Foundry.
 
 Confirm this by running:
 
@@ -14,8 +29,6 @@ $ bosh deployments
 ```
 
 The former will confirm you are targeting a bosh. The latter will display the deployments. One of which should be your Cloud Foundry.
-
-This requirement exists so as to share the same DNS between the redis deployments and the Cloud Foundry deployment.
 
 ## Installation
 
