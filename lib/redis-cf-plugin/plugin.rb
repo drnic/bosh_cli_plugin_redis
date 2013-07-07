@@ -85,6 +85,13 @@ module RedisCfPlugin
       sh "bosh -n deploy"
     end
 
+    desc "Show the redis URI for connection via bosh DNS"
+    group :services, :manage
+    def show_redis_uri
+      load_bosh_and_validate_current_deployment
+      print service_uri
+    end
+
     desc "Bind current Redis service URI to current app via env variable"
     input :app, argument: "required", desc: "Application to immediately bind to", from_given: by_name(:app)
     input :env_var, desc: "Environment variable to bind redis URI (default $REDIS_URI)", default: "REDIS_URI"
@@ -95,7 +102,6 @@ module RedisCfPlugin
       app = input[:app]
       invoke :set_env, app: app, name: env_var, value: service_uri, restart: true
     end
-
 
     desc "Delete current Redis service"
     group :services, :manage
@@ -118,7 +124,11 @@ module RedisCfPlugin
     end
 
     def bosh_director_client
-      @bosh_director_client ||= ::Bosh::Cli::Command::Base.new.director
+      @bosh_director_client ||= begin
+        command = ::Bosh::Cli::Command::Deployment.new
+        command.send(:auth_required)
+        command.director
+      end
     end
 
     def deployment_file
@@ -138,6 +148,28 @@ module RedisCfPlugin
 
     def deployment_name
       @deployment["name"]
+    end
+
+    def service_uri
+      password = @deployment["properties"]["redis"]["password"]
+      port = @deployment["properties"]["redis"]["port"]
+      db = 0
+      "redis://:#{password}@#{server_host}:#{port}/#{db}"
+    end
+
+    # returns the first DNS entry for the running instance
+    def server_host
+      @server_host ||= begin
+        vms = bosh_director_client.fetch_vm_state(deployment_name, use_cache: false)
+        if vms.empty?
+          fail "Deployment has no running instances"
+        end
+        if vms.size > 1
+          warn "Deployment has more than 1 running instance (#{vms.size}); using first instance"
+        end
+        vm = vms.first
+        vm["dns"].first
+      end
     end
   end
 end
