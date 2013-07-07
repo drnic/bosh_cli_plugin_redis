@@ -90,11 +90,24 @@ module RedisCfPlugin
     input :env_var, desc: "Environment variable to bind redis URI (default $REDIS_URI)", default: "REDIS_URI"
     group :services, :manage
     def bind_redis_env_var
+      load_bosh_and_validate_current_deployment
       p env_var = input[:env_var]
       p app = input[:app]
     end
 
+
+    desc "Delete current Redis service"
+    group :services, :manage
+    def delete_redis
+      load_bosh_and_validate_current_deployment
+      sh "bosh delete deployment #{deployment_name}"
+    end
+
     protected
+    def release_name
+      "redis"
+    end
+
     def bosh_release_dir
       File.expand_path("../../../bosh_release", __FILE__)
     end
@@ -104,7 +117,26 @@ module RedisCfPlugin
     end
 
     def bosh_director_client
-      @bosh_director_client ||= Bosh::Cli::Command::Base.new.director
+      @bosh_director_client ||= ::Bosh::Cli::Command::Base.new.director
+    end
+
+    def deployment_file
+      @current_deployment_file ||= ::Bosh::Cli::Command::Deployment.new.deployment
+    end
+
+    def load_bosh_and_validate_current_deployment
+      require "cli" # bosh_cli's director client library
+      unless File.exists?(deployment_file)
+        fail "Target deployment file no longer exists: #{deployment_file}"
+      end
+      @deployment = YAML.load_file(deployment_file)
+      unless @deployment["release"] && @deployment["release"]["name"] == release_name
+        fail "Target deployment file is not for redis service: #{deployment_file}"
+      end
+    end
+
+    def deployment_name
+      @deployment["name"]
     end
   end
 end
