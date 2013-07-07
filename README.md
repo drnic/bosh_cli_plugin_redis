@@ -60,6 +60,14 @@ $ cf create-redis myapp-redis --size large
 $ cf create-redis myapp-redis --size xlarge
 ```
 
+NOTE: By default, the `default` security group is used. It must have port `6379` open.
+
+To chose a different security group, use the `--security-group` option:
+
+```
+$ cf create-redis --security-group redis-server
+```
+
 To see the list of available instance sizes or to edit the list of available instance size, see the section "Customizing" below.
 
 To bind the redis service to an existing Cloud Foundry application (regardless if its running or not) via a simple URI passed as an environment variable, you run the following command. By default, the environment variable is `$REDIS_URI`.
