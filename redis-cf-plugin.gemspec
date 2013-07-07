@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |spec|
   spec.name          = "redis-cf-plugin"
-  spec.version       = "0.0.1"
+  spec.version       = "0.1.0"
   spec.authors       = ["Dr Nic Williams"]
   spec.email         = ["drnicwilliams@gmail.com"]
   spec.description   = %q{Create & bind dedicated Redis to Cloud Foundry apps using Bosh}
