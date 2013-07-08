@@ -4,7 +4,7 @@ Keep your Cloud Foundry services simple - run one service per server and delegat
 
 This is a simple `bosh` CLI plugin to create and delete dedicated redis services and provide a simple URI.
 
-Example create/bind/delete scenario:
+Example create/delete scenario that includes binding the redis service to a Cloud Foundry application via environment variables:
 
 ```
 $ bosh prepare redis
@@ -17,7 +17,7 @@ $ cf unset-env myapp REDIS_URI
 $ bosh delete redis
 ```
 
-The redis servers are run outside of the Cloud Foundry deployment and are bound to Cloud Foundry applications via environment variables (until the new Service Connector is supported). It is currently
+The resulting redis servers can be discovered and accessed by any systems (such as Cloud Foundry applications) using the same bosh (or microbosh) or a connected DNS.
 
 ## Requirements
 
