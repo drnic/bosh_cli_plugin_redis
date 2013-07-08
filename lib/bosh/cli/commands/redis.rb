@@ -109,9 +109,7 @@ module Bosh::Cli::Command
             }
           }.to_yaml
         end
-      end
 
-      step("Creating deployment file", "Cannot create deployment file", :fatal) do
         stdout = Bosh::Cli::Config.output
         Bosh::Cli::Config.output = nil
         deployment_cmd(non_interactive: true).set_current(deployment_file)
