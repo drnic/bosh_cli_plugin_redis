@@ -207,9 +207,8 @@ module Bosh::Cli::Command
       cmd
     end
 
-    # TODO this is now a bosh cli command itself
     def deployment_file
-      @current_deployment_file ||= ::Bosh::Cli::Command::Deployment.new.deployment
+      deployment
     end
 
     # TODO use bosh cli helpers to validate/require this
