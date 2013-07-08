@@ -2,15 +2,19 @@
 
 Keep your Cloud Foundry services simple - run one service per server and delegate the creation and deletion to BOSH.
 
-This is a simple `cf` CLI plugin to create and delete dedicated redis services, and bind them into existing Cloud Foundry applications.
+This is a simple `bosh` CLI plugin to create and delete dedicated redis services and provide a simple URI.
 
 Example create/bind/delete scenario:
 
 ```
-$ cf prepare-redis
-$ cf create-redis
-$ cf bind-redis-env-var myapp
-$ cf delete-redis
+$ bosh prepare redis
+$ bosh create redis --name demoredis
+$ bosh show redis uri
+redis://:c1da049a75b3@0.redis.default.demoredis.microbosh:6379/0
+$ cf set-env myapp REDIS_URI redis://:c1da049a75b3@0.redis.default.redis-123.microbosh:6379/0
+
+$ cf unset-env myapp REDIS_URI
+$ bosh delete redis
 ```
 
 The redis servers are run outside of the Cloud Foundry deployment and are bound to Cloud Foundry applications via environment variables (until the new Service Connector is supported). It is currently
@@ -36,7 +40,7 @@ Install via RubyGems:
 
 ```
 $ gem install bosh_cli "~> 1.5.0.pre" --source https://s3.amazonaws.com/bosh-jenkins-gems/ 
-$ gem install redis-cf-plugin
+$ gem install bosh_cli_plugin_redis
 ```
 
 The `bosh_cli` gem is currently only available from S3, rather than RubyGem itself. So it needs to be installed first.
@@ -46,18 +50,18 @@ The `bosh_cli` gem is currently only available from S3, rather than RubyGem itse
 Each time you install the latest `redis-cf-plugin` you will want to re-upload the latest available redis release to your bosh. If no newer release is available then nothing good nor bad will occur.
 
 ```
-$ cf prepare-redis
+$ bosh prepare redis
 Uploading new redis release to bosh...
 ```
 
 To create/provision a new redis service you run the following command. By default, it will select the smallest known instance size.
 
 ```
-$ cf create-redis myapp-redis
-$ cf create-redis myapp-redis --size small
-$ cf create-redis myapp-redis --size medium
-$ cf create-redis myapp-redis --size large
-$ cf create-redis myapp-redis --size xlarge
+$ bosh create redis myapp-redis
+$ bosh create redis myapp-redis --size small
+$ bosh create redis myapp-redis --size medium
+$ bosh create redis myapp-redis --size large
+$ bosh create redis myapp-redis --size xlarge
 ```
 
 NOTE: By default, the `default` security group is used. It must have port `6379` open.
@@ -65,32 +69,25 @@ NOTE: By default, the `default` security group is used. It must have port `6379`
 To chose a different security group, use the `--security-group` option:
 
 ```
-$ cf create-redis --security-group redis-server
+$ bosh create redis --security-group redis-server
 ```
 
 To see the list of available instance sizes or to edit the list of available instance size, see the section "Customizing" below.
 
-To bind the redis service to an existing Cloud Foundry application (regardless if its running or not) via a simple URI passed as an environment variable, you run the following command. By default, the environment variable is `$REDIS_URI`.
-
-```
-$ cf bind-redis-env-var myapp-redis myapp
-$ cf bind-redis-env-var myapp-redis myapp --env-var REDISTOGO
-```
-
-Currently there is no way to load the redis service into Cloud Foundry as a "provisioned service instance". This will be implemented soon (in association with the Service Connector API).
+* TODO - how to show available instance sizes
+* TODO - how to update a redis server to a different instance size/flavor
+* TODO - how to update the persistent disk for the redis server
 
 ## Customizing
 
-TODO - how to show available instance sizes
-TODO - how to edit available instance sizes (via the bosh deployment file templates)
+* TODO - how to edit available instance sizes (via the bosh deployment file templates)
 
 ## Releasing new plugin gem versions
 
-There are three reasons to release new versions of this plugin.
+There are two reasons to release new versions of this plugin.
 
 1. Package the latest [redis-boshrelease](https://github.com/cloudfoundry-community/redis-boshrelease) bosh release (which describes how the redis service is implemented)
 2. New features or bug fixes to the plugin
-3. Fix regressions caused by newer versions of the `cf` CLI or newer Cloud Foundry releases
 
 To package the latest "final release" of the redis bosh release into this source repository, run the following command:
 
@@ -105,16 +102,16 @@ $ rake bosh:release:import'[/path/to/releases/redis-boshrelease]'
 
 Note: only the latest "final release" will be packaged. See https://github.com/cloudfoundry-community/redis-boshrelease#readme for information on creating new bosh releases.
 
-To install and test the plugin:
+To locally test the plugin (`bosh` cli loads plugins from its local path automatically):
 
 ```
-$ rake install
-$ cf
+$ cf /path/to/bosh_cli_plugin_redis
+$ bosh redis
 ```
 
 To release a new version of the plugin as a RubyGem:
 
-1. Edit `redis-cf-plugin.gemspec` to update the major or minor or patch version.
+1. Edit `bosh_cli_plugin_redis.gemspec` to update the major or minor or patch version.
 2. Run the release command:
 
 ```
@@ -123,8 +120,12 @@ $ rake release
 
 ## Contributing
 
+For fixes or features to the `bosh_cli_plugin_redis` (`bosh redis`) plugin:
+
 1. Fork it
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request
+
+For fixes or features to the redis bosh release, please visit https://github.com/cloudfoundry-community/redis-boshrelease. Final releases of `redis-boshrelease` will be distributed in future gem versions of this plugin.

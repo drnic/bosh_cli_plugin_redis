@@ -4,12 +4,23 @@ require "yaml"
 require "rake"
 require "rake/file_utils"
 
-module RedisCfPlugin
-  class Plugin < CF::CLI
+module Bosh::Cli::Command
+  class Redis < Base
     include FileUtils
 
-    desc "Prepare target bosh for deploying one or more Redis services"
-    group :services, :manage
+    usage "redis"
+    desc  "show micro bosh sub-commands"
+    def redis_help
+      say("bosh redis sub-commands:")
+      nl
+      cmds = Bosh::Cli::Config.commands.values.find_all {|c|
+        c.usage =~ /redis/
+      }
+      Bosh::Cli::Command::Help.list_commands(cmds)
+    end
+
+    usage "prepare redis"
+    desc "Prepare bosh for deploying one or more Redis services"
     def prepare_redis
       within_bosh_release do
         # the releases/index.yml contains all the available release versions in an unordered
@@ -37,16 +48,15 @@ module RedisCfPlugin
     # TODO - size must be valid
     # TODO - name must be unique (cf services & bosh deployments)
 
+    usage "create redis"
     desc "Create a Redis service deployed upon target bosh"
-    group :services, :manage
-    input :name, desc: "Unique name for service (within bosh & cloud foundry)"
-    input :size, desc: "Size of provisioned VMs", default: "small"
-    input :security_group, desc: "Security group to assign to provisioned VMs", default: "default"
+    option "--name redis-<timestamp>", String, "Unique bosh deployment name"
+    option "--size small", String, "Size of provisioned VMs"
+    option "--security-group default", String, "Security group to assign to provisioned VMs"
     def create_redis
-      require "cli" # bosh_cli's director client library
-      service_name = input[:name] || "redis-#{Time.now.to_i}"
-      resource_size = input[:size]
-      security_group = input[:security_group]
+      service_name = options[:name] || default_name
+      resource_size = options[:size] || default_size
+      security_group = options[:security_group] || default_security_group
 
       bosh_uuid = bosh_director_client.get_status["uuid"]
       bosh_cpi = bosh_director_client.get_status["cpi"]
@@ -65,7 +75,7 @@ module RedisCfPlugin
       #     security_group: redis-server
       deployment_file = "deployments/redis/#{service_name}.yml"
       sh "mkdir -p deployments/redis"
-      line "Creating deployment file #{deployment_file}..."
+      say "Creating deployment file #{deployment_file}..."
       File.open(deployment_file, "w") do |file|
         file << {
           "name" => service_name,
@@ -85,44 +95,47 @@ module RedisCfPlugin
       sh "bosh -n deploy"
     end
 
+    usage "show redis uri"
     desc "Show the redis URI for connection via bosh DNS"
-    group :services, :manage
     def show_redis_uri
       load_bosh_and_validate_current_deployment
       print service_uri
     end
 
-    desc "Bind current Redis service URI to current app via env variable"
-    input :app, argument: "required", desc: "Application to immediately bind to", from_given: by_name(:app)
-    input :env_var, desc: "Environment variable to bind redis URI (default $REDIS_URI)", default: "REDIS_URI"
-    group :services, :manage
-    def bind_redis_env_var
-      load_bosh_and_validate_current_deployment
-      env_var = input[:env_var]
-      app = input[:app]
-      invoke :set_env, app: app, name: env_var, value: service_uri, restart: true
-    end
-
+    usage "delete redis"
     desc "Delete current Redis service"
-    group :services, :manage
     def delete_redis
       load_bosh_and_validate_current_deployment
       sh "bosh delete deployment #{deployment_name}"
     end
 
     protected
+
+    def default_name
+      "redis-#{Time.now.to_i}"
+    end
+
+    def default_size
+      "small"
+    end
+
+    def default_security_group
+      "default"
+    end
+
     def release_name
       "redis"
     end
 
     def bosh_release_dir
-      File.expand_path("../../../bosh_release", __FILE__)
+      File.expand_path("../../../../../bosh_release", __FILE__)
     end
 
     def within_bosh_release(&block)
       chdir(bosh_release_dir, &block)
     end
 
+    # TODO this is now a bosh cli command itself; use #director
     def bosh_director_client
       @bosh_director_client ||= begin
         command = ::Bosh::Cli::Command::Deployment.new
@@ -131,18 +144,19 @@ module RedisCfPlugin
       end
     end
 
+    # TODO this is now a bosh cli command itself
     def deployment_file
       @current_deployment_file ||= ::Bosh::Cli::Command::Deployment.new.deployment
     end
 
+    # TODO use bosh cli helpers to validate/require this
     def load_bosh_and_validate_current_deployment
-      require "cli" # bosh_cli's director client library
       unless File.exists?(deployment_file)
-        fail "Target deployment file no longer exists: #{deployment_file}"
+        err "Target deployment file no longer exists: #{deployment_file}"
       end
       @deployment = YAML.load_file(deployment_file)
       unless @deployment["release"] && @deployment["release"]["name"] == release_name
-        fail "Target deployment file is not for redis service: #{deployment_file}"
+        err "Target deployment file is not for redis service: #{deployment_file}"
       end
     end
 
@@ -162,10 +176,10 @@ module RedisCfPlugin
       @server_host ||= begin
         vms = bosh_director_client.fetch_vm_state(deployment_name, use_cache: false)
         if vms.empty?
-          fail "Deployment has no running instances"
+          err "Deployment has no running instances"
         end
         if vms.size > 1
-          warn "Deployment has more than 1 running instance (#{vms.size}); using first instance"
+          say "#{"WARNING!".make_red} Deployment has more than 1 running instance (#{vms.size}); using first instance"
         end
         vm = vms.first
         vm["dns"].first
