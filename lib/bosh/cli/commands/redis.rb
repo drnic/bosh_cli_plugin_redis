@@ -64,7 +64,7 @@ module Bosh::Cli::Command
 
       bosh_status # preload
       nl
-      say "CPI: #{bosh_cpi}"
+      say "CPI: #{bosh_cpi.make_green}"
       say "Deployment name: #{service_name.make_green}"
       say "Resource size: #{validated_resource_size_colored(resource_size)}"
       say "Security group: #{security_group.make_green}"
