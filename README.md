@@ -1,8 +1,6 @@
-# Dedicate Redis services for your Cloud Foundry
+# Dedicate Redis services on AWS or OpenStack
 
-Keep your Cloud Foundry services simple - run one service per server and delegate the creation and deletion to BOSH.
-
-This is a simple `bosh` CLI plugin to create and delete dedicated redis services and provide a simple URI.
+This is a simple `bosh` CLI plugin to create and delete dedicated redis services and provide a simple URI. It runs on AWS or OpenStack via bosh.
 
 Example create/delete scenario that includes binding the redis service to a Cloud Foundry application via environment variables:
 
