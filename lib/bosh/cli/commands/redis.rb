@@ -66,9 +66,14 @@ module Bosh::Cli::Command
       nl
       say "CPI: #{bosh_cpi}"
       say "Deployment name: #{service_name.make_green}"
-      say "Resource size: #{resource_size.make_green}"
+      say "Resource size: #{validated_resource_size_colored(resource_size)}"
       say "Security group: #{security_group.make_green}"
       nl
+
+      step("Validating resource size", "Resource size must be in #{available_resource_sizes.join(', ')}", :fatal) do
+        available_resource_sizes.include?(resource_size)
+      end
+
       unless confirmed?("Security group exists with ports 22 & #{redis_port}")
         cancel_deployment
       end
@@ -119,6 +124,10 @@ module Bosh::Cli::Command
       # re-set current deployment to show output
       deployment_cmd.set_current(deployment_file)
       deployment_cmd(non_interactive: options[:non_interactive]).perform
+    rescue Bosh::Cli::ValidationHalted
+      errors.each do |error|
+        say error.make_red
+      end
     end
 
     usage "show redis uri"
@@ -165,6 +174,35 @@ module Bosh::Cli::Command
       chdir(bosh_release_dir, &block)
     end
 
+    def template_file(file)
+      File.join(bosh_release_dir, "templates", bosh_cpi, file)
+    end
+
+    def bosh_release_spec
+      @bosh_release_spec ||= begin
+        unless File.exists?(template_file("spec"))
+          err "Bosh release templates missing 'spec'"
+        end
+        YAML.load_file(template_file("spec"))
+      end
+    end
+
+    def available_resource_sizes
+      resources = bosh_release_spec["resources"]
+      if resources && resources.is_a?(Array) && resources.first.is_a?(String)
+        resources
+      else
+        err "template spec needs 'resources' key with list of resource pool names available"
+      end
+    end
+
+    # If resource_size is within +available_resource_sizes+ then display it in green;
+    # else display it in red.
+    def validated_resource_size_colored(resource_size)
+      available_resource_sizes.include?(resource_size) ?
+        resource_size.make_green : resource_size.make_red
+    end
+
     def bosh_status
       @bosh_status ||= begin
         step("Fetching bosh information", "Cannot fetch bosh information", :fatal) do
@@ -180,10 +218,6 @@ module Bosh::Cli::Command
 
     def bosh_cpi
       bosh_status["cpi"]
-    end
-
-    def template_file(file)
-      File.join(bosh_release_dir, "templates", bosh_cpi, file)
     end
 
     # TODO this is now a bosh cli command itself; use #director
