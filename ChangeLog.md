@@ -22,6 +22,10 @@ Converted into a bosh plugin. Prefix "bosh" to the sub-commands below:
 
 Note: the `cf bind-redis-env-var` command has been removed as it is a) specific to a Cloud Foundry user not a bosh user; b) kinda crappy "services" integration. Perhaps move it back into a cf plugin in future.
 
+Other features/fixes:
+
+* Validates the resource size with available sizes in the template [v0.2.1]
+
 ## v0.1 - redis-cf-plugin
 
 Initial release! The initial commands offered are:
