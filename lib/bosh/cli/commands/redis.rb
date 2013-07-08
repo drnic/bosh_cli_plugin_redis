@@ -110,11 +110,17 @@ module Bosh::Cli::Command
           }.to_yaml
         end
       end
-      nl
 
+      step("Creating deployment file", "Cannot create deployment file", :fatal) do
+        stdout = Bosh::Cli::Config.output
+        Bosh::Cli::Config.output = nil
+        deployment_cmd(non_interactive: true).set_current(deployment_file)
+        biff_cmd(non_interactive: true).biff(template_file)
+        Bosh::Cli::Config.output = stdout
+      end
+      # re-set current deployment to show output
       deployment_cmd.set_current(deployment_file)
-      biff_cmd.biff(template_file)
-      deployment_cmd.perform
+      deployment_cmd(non_interactive: options[:non_interactive]).perform
     end
 
     usage "show redis uri"
@@ -128,7 +134,7 @@ module Bosh::Cli::Command
     desc "Delete current Redis service"
     def delete_redis
       load_bosh_and_validate_current_deployment
-      sh "bosh delete deployment #{deployment_name}"
+      deployment_cmd(non_interactive: options[:non_interactive]).delete(deployment_name)
     end
 
     protected
@@ -187,20 +193,20 @@ module Bosh::Cli::Command
       director
     end
 
-    def deployment_cmd
-      @deployment_cmd ||= begin
-        cmd = Bosh::Cli::Command::Deployment.new
-        cmd.add_option :non_interactive, true
-        cmd
+    def deployment_cmd(options = {})
+      cmd = Bosh::Cli::Command::Deployment.new
+      options.each do |key, value|
+        cmd.add_option key.to_sym, value
       end
+      cmd
     end
 
-    def biff_cmd
-      @biff_cmd ||= begin
-        cmd = Bosh::Cli::Command::Biff.new
-        cmd.add_option :non_interactive, true
-        cmd
+    def biff_cmd(options = {})
+      cmd = Bosh::Cli::Command::Biff.new
+      options.each do |key, value|
+        cmd.add_option key.to_sym, value
       end
+      cmd
     end
 
     # TODO this is now a bosh cli command itself
