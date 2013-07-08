@@ -7,6 +7,7 @@ require "rake/file_utils"
 module Bosh::Cli::Command
   class Redis < Base
     include FileUtils
+    include Bosh::Cli::Validation
 
     usage "redis"
     desc  "show micro bosh sub-commands"
@@ -70,10 +71,7 @@ module Bosh::Cli::Command
         cancel_deployment
       end
 
-      bosh_uuid = bosh_director_client.get_status["uuid"]
-      bosh_cpi = bosh_director_client.get_status["cpi"]
-
-      template_file = File.join(bosh_release_dir, "templates", bosh_cpi, "single_vm.yml.erb")
+      template_file = template_file("single_vm.yml.erb")
 
       # Create an initial deployment file; upon which the CPI-specific template will be applied below
       # Initial file will look like:
@@ -86,22 +84,28 @@ module Bosh::Cli::Command
       #     resource: medium
       #     security_group: redis-server
       deployment_file = "deployments/redis/#{service_name}.yml"
-      sh "mkdir -p deployments/redis"
-      say "Creating deployment file #{deployment_file}..."
-      File.open(deployment_file, "w") do |file|
-        file << {
-          "name" => service_name,
-          "director_uuid" => bosh_uuid,
-          "networks" => {},
-          "properties" => {
-            "redis" => {
-              "resource" => resource_size,
-              "security_group" => security_group
-            }
-          }
-        }.to_yaml
+      step("Checking/creating #{redis_deployments_store_path} for deployment files",
+           "Failed to create #{redis_deployments_store_path} for deployment files", :fatal) do
+        mkdir_p(redis_deployments_store_path)
       end
 
+      step("Creating deployment file #{deployment_file}",
+           "Failed to create deployment file #{deployment_file}", :fatal) do
+        File.open(deployment_file, "w") do |file|
+          file << {
+            "name" => service_name,
+            "director_uuid" => bosh_uuid,
+            "networks" => {},
+            "properties" => {
+              "redis" => {
+                "resource" => resource_size,
+                "security_group" => security_group
+              }
+            }
+          }.to_yaml
+        end
+      end
+      nl
       sh "bosh deployment #{deployment_file}"
       sh "bosh -n diff #{template_file}"
       sh "bosh -n deploy"
@@ -139,12 +143,37 @@ module Bosh::Cli::Command
       "redis"
     end
 
+    def redis_deployments_store_path
+      "deployments/redis"
+    end
+
     def bosh_release_dir
       File.expand_path("../../../../../bosh_release", __FILE__)
     end
 
     def within_bosh_release(&block)
       chdir(bosh_release_dir, &block)
+    end
+
+    def bosh_status
+      @bosh_status ||= begin
+        step("Fetching bosh information", "Cannot fetch bosh information", :fatal) do
+           @bosh_status = bosh_director_client.get_status
+        end
+        @bosh_status
+      end
+    end
+
+    def bosh_uuid
+      bosh_status["uuid"]
+    end
+
+    def bosh_cpi
+      bosh_status["cpi"]
+    end
+
+    def template_file(file)
+      File.join(bosh_release_dir, "templates", bosh_cpi, file)
     end
 
     # TODO this is now a bosh cli command itself; use #director
