@@ -53,12 +53,14 @@ module Bosh::Cli::Command
     desc "Create a Redis service deployed upon target bosh"
     option "--name redis-<timestamp>", String, "Unique bosh deployment name"
     option "--size small", String, "Size of provisioned VMs"
+    option "--disk 4096", Integer, "Size of persistent disk (Mb)"
     option "--security-group default", String, "Security group to assign to provisioned VMs"
     def create_redis
       auth_required
 
       service_name = options[:name] || default_name
       resource_size = options[:size] || default_size
+      persistent_disk = options[:disk] || default_persistent_disk
       security_group = options[:security_group] || default_security_group
       redis_port = 6379
 
@@ -67,10 +69,11 @@ module Bosh::Cli::Command
       say "CPI: #{bosh_cpi.make_green}"
       say "Deployment name: #{service_name.make_green}"
       say "Resource size: #{validated_resource_size_colored(resource_size)}"
+      say "Persistent disk: #{persistent_disk.to_s.make_green}"
       say "Security group: #{security_group.make_green}"
       nl
 
-      step("Validating resource size", "Resource size must be in #{available_resource_sizes.join(', ')}", :fatal) do
+      step("Validating resource size", "Resource size must be in #{available_resource_sizes.join(', ')}", :non_fatal) do
         available_resource_sizes.include?(resource_size)
       end
 
@@ -80,6 +83,8 @@ module Bosh::Cli::Command
       unless confirmed?("Creating redis service")
         cancel_deployment
       end
+
+      raise Bosh::Cli::ValidationHalted unless errors.empty?
 
       template_file = template_file("single_vm.yml.erb")
 
@@ -152,6 +157,10 @@ module Bosh::Cli::Command
 
     def default_size
       "small"
+    end
+
+    def default_persistent_disk
+      4096
     end
 
     def default_security_group
