@@ -54,9 +54,21 @@ module Bosh::Cli::Command
     option "--size small", String, "Size of provisioned VMs"
     option "--security-group default", String, "Security group to assign to provisioned VMs"
     def create_redis
+      auth_required
       service_name = options[:name] || default_name
       resource_size = options[:size] || default_size
       security_group = options[:security_group] || default_security_group
+      redis_port = 6379
+
+      say "Deployment name: #{service_name.make_green}"
+      say "Resource size: #{resource_size.make_green}"
+      say "Security group: #{security_group.make_green}"
+      unless confirmed?("Security group exists with ports 22 & #{redis_port}")
+        cancel_deployment
+      end
+      unless confirmed?("Creating redis service")
+        cancel_deployment
+      end
 
       bosh_uuid = bosh_director_client.get_status["uuid"]
       bosh_cpi = bosh_director_client.get_status["cpi"]
@@ -137,11 +149,7 @@ module Bosh::Cli::Command
 
     # TODO this is now a bosh cli command itself; use #director
     def bosh_director_client
-      @bosh_director_client ||= begin
-        command = ::Bosh::Cli::Command::Deployment.new
-        command.send(:auth_required)
-        command.director
-      end
+      director
     end
 
     # TODO this is now a bosh cli command itself
@@ -151,6 +159,7 @@ module Bosh::Cli::Command
 
     # TODO use bosh cli helpers to validate/require this
     def load_bosh_and_validate_current_deployment
+      auth_required
       unless File.exists?(deployment_file)
         err "Target deployment file no longer exists: #{deployment_file}"
       end
