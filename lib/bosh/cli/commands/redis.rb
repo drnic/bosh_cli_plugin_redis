@@ -106,9 +106,10 @@ module Bosh::Cli::Command
         end
       end
       nl
-      sh "bosh deployment #{deployment_file}"
-      sh "bosh -n diff #{template_file}"
-      sh "bosh -n deploy"
+
+      deployment_cmd.set_current(deployment_file)
+      biff_cmd.biff(template_file)
+      deployment_cmd.perform
     end
 
     usage "show redis uri"
@@ -179,6 +180,22 @@ module Bosh::Cli::Command
     # TODO this is now a bosh cli command itself; use #director
     def bosh_director_client
       director
+    end
+
+    def deployment_cmd
+      @deployment_cmd ||= begin
+        cmd = Bosh::Cli::Command::Deployment.new
+        cmd.add_option :non_interactive, true
+        cmd
+      end
+    end
+
+    def biff_cmd
+      @biff_cmd ||= begin
+        cmd = Bosh::Cli::Command::Biff.new
+        cmd.add_option :non_interactive, true
+        cmd
+      end
     end
 
     # TODO this is now a bosh cli command itself
