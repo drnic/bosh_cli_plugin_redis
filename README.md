@@ -55,11 +55,17 @@ Uploading new redis release to bosh...
 To create/provision a new redis service you run the following command. By default, it will select the smallest known instance size.
 
 ```
-$ bosh create redis myapp-redis
-$ bosh create redis myapp-redis --size small
-$ bosh create redis myapp-redis --size medium
-$ bosh create redis myapp-redis --size large
-$ bosh create redis myapp-redis --size xlarge
+$ bosh create redis
+$ bosh create redis --size small
+$ bosh create redis --size medium
+$ bosh create redis --size large
+$ bosh create redis --size xlarge
+```
+
+By default the redis server is assigned a 4096 Mb persistent volume/disk. To change this value use `--disk`:
+
+```
+$ bosh create redis myapp-redis --disk 8192
 ```
 
 NOTE: By default, the `default` security group is used. It must have port `6379` open.

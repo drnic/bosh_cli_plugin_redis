@@ -8,11 +8,13 @@ Converted into a bosh plugin. Prefix "bosh" to the sub-commands below:
     prepare redis 
         Prepare bosh for deploying one or more Redis services 
 
-    create redis [--name] [--size] [--security_group] 
+    create redis [--name redis-<timestamp>] [--size small] [--disk 4096] 
+                 [--security-group default] 
         Create a Redis service deployed upon target bosh 
-        --name           Unique name for service (within bosh & cloud foundry) 
-        --size           Size of provisioned VMs 
-        --security_group Security group to assign to provisioned VMs 
+        --name redis-<timestamp> Unique bosh deployment name 
+        --size small             Size of provisioned VMs 
+        --disk 4096              Size of persistent disk (Mb) 
+        --security-group default Security group to assign to provisioned VMs 
 
     show redis uri 
         Show the redis URI for connection via bosh DNS 
@@ -25,6 +27,7 @@ Note: the `cf bind-redis-env-var` command has been removed as it is a) specific 
 Other features/fixes:
 
 * Validates the resource size with available sizes in the template [v0.2.1]
+* `bosh create redis --disk 10000` to disk persistent disk size (Mb) [v0.2.2]
 
 ## v0.1 - redis-cf-plugin
 
