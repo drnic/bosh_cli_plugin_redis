@@ -56,14 +56,19 @@ module Bosh::Cli::Command
     option "--security-group default", String, "Security group to assign to provisioned VMs"
     def create_redis
       auth_required
+
       service_name = options[:name] || default_name
       resource_size = options[:size] || default_size
       security_group = options[:security_group] || default_security_group
       redis_port = 6379
 
+      bosh_status # preload
+      nl
+      say "CPI: #{bosh_cpi}"
       say "Deployment name: #{service_name.make_green}"
       say "Resource size: #{resource_size.make_green}"
       say "Security group: #{security_group.make_green}"
+      nl
       unless confirmed?("Security group exists with ports 22 & #{redis_port}")
         cancel_deployment
       end
