@@ -246,7 +246,8 @@ module Bosh::Cli::Command
           say "#{"WARNING!".make_red} Deployment has more than 1 running instance (#{vms.size}); using first instance"
         end
         vm = vms.first
-        vm["dns"].first
+        # bug in bosh dns means old dns entries might still point to this new VM
+        vm["dns"].select { |dns| dns =~ %r{#{deployment_name}}  }.first
       end
     end
   end
