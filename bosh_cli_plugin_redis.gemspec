@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |spec|
   spec.name          = "bosh_cli_plugin_redis"
-  spec.version       = "0.2.2"
+  spec.version       = "0.2.3"
   spec.authors       = ["Dr Nic Williams"]
   spec.email         = ["drnicwilliams@gmail.com"]
   spec.description   = %q{Create dedicated Redis servers using Bosh}

@@ -28,6 +28,7 @@ Other features/fixes:
 
 * Validates the resource size with available sizes in the template [v0.2.1]
 * `bosh create redis --disk 10000` to disk persistent disk size (Mb) [v0.2.2]
+* Fix #1 - pass properties.redis.persistent_disk to templates [v0.2.3]
 
 ## v0.1 - redis-cf-plugin
 
