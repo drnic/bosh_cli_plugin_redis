@@ -114,7 +114,8 @@ module Bosh::Cli::Command
             "properties" => {
               "redis" => {
                 "resource" => resource_size,
-                "security_group" => security_group
+                "security_group" => security_group,
+                "persistent_disk" => persistent_disk
               }
             }
           }.to_yaml
