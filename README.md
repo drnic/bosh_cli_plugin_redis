@@ -6,7 +6,7 @@ Example create/delete scenario that includes binding the redis service to a Clou
 
 ```
 $ bosh prepare redis
-$ bosh create redis --name demoredis
+$ bosh create redis
 $ bosh show redis uri
 redis://:c1da049a75b3@0.redis.default.demoredis.microbosh:6379/0
 $ cf set-env myapp REDIS_URI redis://:c1da049a75b3@0.redis.default.redis-123.microbosh:6379/0
