@@ -17,6 +17,10 @@ $ bosh delete redis
 
 The resulting redis servers can be discovered and accessed by any systems (such as Cloud Foundry applications) using the same bosh (or microbosh) or a connected DNS.
 
+## Why not use Cloud Foundry v2 services?
+
+See [discussion](https://groups.google.com/a/cloudfoundry.org/d/msg/bosh-users/yoXGZMcWduc/8xocVYxpKakJ) on vcap-dev mailing list. 
+
 ## Requirements
 
 You must use the same BOSH for deploying redis as you use to deploy Cloud Foundry (unless your DNS is configured to be shared across the two BOSH).
